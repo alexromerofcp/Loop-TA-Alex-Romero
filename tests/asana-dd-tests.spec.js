@@ -84,51 +84,19 @@ testCases.forEach((data) => {
       // Project pages can also be reached from the home page instead of left Navigation.
       const projects = await page.locator(".SidebarCollapsibleSection--isExpanded.SidebarCollapsibleSection.SidebarProjectsSectionCleanAndClear a");
       const project_count = await projects.count();
-      let match_project = 0;
+      projects.filter({ hasText: data.leftNav }).click();
+      await expect(projects.filter({ hasText: data.leftNav })).toHaveCount(1);
 
-      for(let i=0; i < project_count; ++i) {
-        if (await projects.nth(i).locator("span").textContent() === data.leftNav) {
-          await projects.nth(i).locator("span").click();
-          // Project is found.
-          match_project++;
-          break;
-          }           
-      }
-      // If project is not found, the assertion/test fails.
-      expect(match_project).toBeGreaterThan(0);
       await page.waitForSelector('.BoardBody-columnDraggableItemWrapper.SortableList-sortableItemContainer');
     });
 
     await test.step('Verify the card is within the right column', async () => {
       // Verify the card is within the right column.
-      const columns = await page.locator(".BoardBody-columnDraggableItemWrapper.SortableList-sortableItemContainer");
-      const column_count = await columns.count();
-      let match_column = 0;
-      // Iterate to locate the specified column.
-      for (let i=0; i < column_count; ++i){
-        // The "space" character ASCII code of the h3s are represented by 160, while data.column spaces are 32. I adjusted accordingly.
-        if (await columns.nth(i).locator("h3").textContent() === data.column.replace(" ",
-          String.fromCharCode(160))) {
-          const cards_in_column = await columns.nth(i).locator(".TypographyPresentation.TypographyPresentation--m.BoardCard-taskName");
-          const card_count = await columns.nth(i).locator(".TypographyPresentation.TypographyPresentation--m.BoardCard-taskName").count();
-          let match_count = 0;
-          // Column is found.
-          match_column++;
-          // Iterate through the cards in the located column.  
-          for (let x=0; x < card_count; ++x){
-            if(await cards_in_column.nth(x).textContent() === data.card_title){
-              // The card is found in the matching column.
-              match_count++;
-              break;
-            }
-          }
-          // If match_count equals 0, then the specified card_title was not found in the specified column of the test case.
-          expect(match_count).toBeGreaterThan(0);
-          break;
-        }
-      }
-      // If the column is not found, the assertion/test fails.
-      expect(match_column).toBeGreaterThan(0);
+      const columns = await page.locator(".BoardBody-columnDraggableItemWrapper.SortableList-sortableItemContainer")
+      .filter({ hasText: data.column.replace(" ", String.fromCharCode(160)) });
+      await expect(columns).toHaveCount(1);
+      const card_matched = await columns.locator(page.getByText(data.card_title));
+      await expect(card_matched).toHaveCount(1);
     });
   });
 });
